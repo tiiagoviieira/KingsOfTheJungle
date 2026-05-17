@@ -1,29 +1,56 @@
 package com.example.kingsofthejungle
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.kingsofthejungle.ui.theme.ActionSelectionScreen
-import com.example.kingsofthejungle.ui.theme.LobbyScreen
-import com.example.kingsofthejungle.ui.theme.LoginScreen
+import com.example.kingsofthejungle.ui.screens.ActionSelectionScreen
+import com.example.kingsofthejungle.ui.screens.LobbyScreen
+import com.example.kingsofthejungle.ui.screens.LoginScreen
 import com.example.kingsofthejungle.ui.theme.KingsOfTheJungleTheme
-import com.example.kingsofthejungle.ui.theme.GameMapScreen
+import com.example.kingsofthejungle.ui.screens.GameMapScreen
 
 class MainActivity : ComponentActivity() {
+    private lateinit var nearbyRepository: NearbyConnectionsRepository
+    private lateinit var locationRepository: LocationRepository
+    private lateinit var sensorRepository: SensorRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        nearbyRepository = NearbyConnectionsRepository(applicationContext)
+        locationRepository = LocationRepository(applicationContext)
+        sensorRepository = SensorRepository(applicationContext)
+        
+        val viewModelFactory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(GameViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return GameViewModel(nearbyRepository, locationRepository, sensorRepository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+
         setContent {
             KingsOfTheJungleTheme {
+                RequestGamePermissions()
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    MainNavigation()
+                    MainNavigation(viewModelFactory)
                 }
             }
         }
@@ -31,10 +58,52 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainNavigation() {
+fun RequestGamePermissions() {
+    val permissions = mutableListOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.BODY_SENSORS
+    )
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+        permissions.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+        permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissions.add(Manifest.permission.NEARBY_WIFI_DEVICES)
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        val allGranted = permissionsMap.values.all { it }
+        if (allGranted) {
+            // All permissions granted
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        launcher.launch(permissions.toTypedArray())
+    }
+}
+
+@Composable
+fun MainNavigation(viewModelFactory: ViewModelProvider.Factory) {
     val navController = rememberNavController()
-    val viewModel: GameViewModel = viewModel()
+    val viewModel: GameViewModel = viewModel(factory = viewModelFactory)
     val uiState = viewModel.publicUiState.collectAsState().value
+
+    // Auto-navigate to game map when gameState is true (sync across network)
+    LaunchedEffect(uiState.gameState) {
+        if (uiState.gameState) {
+            navController.navigate("game_map") {
+                // Ensure we don't build up a backstack of lobby/map screens
+                popUpTo("action_selection") { inclusive = false }
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = "login") {
 
@@ -53,7 +122,7 @@ fun MainNavigation() {
                     navController.navigate("lobby")
                 },
                 onJoinLobbyClick = {
-                    // Mocking joining a lobby
+                    viewModel.startDiscoveringLobbies()
                     navController.navigate("lobby")
                 }
             )
@@ -68,14 +137,17 @@ fun MainNavigation() {
                     onReadyClick = { viewModel.toggleReadyStatus() },
                     onStartGameClick = {
                         viewModel.startGame()
-                        navController.navigate("game_map")
+                        // Navigation is now handled by the LaunchedEffect reacting to gameState
                     }
                 )
             }
         }
 
         composable("game_map") {
-            GameMapScreen(uiState = uiState)
+            GameMapScreen(
+                uiState = uiState,
+                onForfeitClick = { viewModel.forfeitGame() }
+            )
         }
     }
 }
