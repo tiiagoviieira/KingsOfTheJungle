@@ -21,9 +21,13 @@ data class Lobby(
 
 data class AppUiState(
     val playerName : String = "",
+    val localPlayerId: String = "",
     val listLobbys : List<Lobby> = emptyList(),
     val currentLobby : Lobby? = null,
     val gameState : Boolean = false,
     val compassHeading: Float = 0f,
-    val heartRate: Int? = null
+    val heartRate: Int? = null,
+    val availableLobbies: List<Pair<String, String>> = emptyList(),
+    val discoveryError: String? = null,
+    val gameMessage: String? = null
 )

@@ -25,7 +25,7 @@ fun GameMapScreen(
     onForfeitClick: () -> Unit
 ) {
     val players = uiState.currentLobby?.playerList ?: emptyList()
-    val myPlayer = players.find { it.id == "me" }
+    val myPlayer = players.find { it.id == uiState.localPlayerId }
     val myTeam = myPlayer?.team ?: ""
     val teammates = players.filter { it.team == myTeam }
     val aliveTeammatesCount = teammates.count { it.isAlive }
@@ -103,7 +103,7 @@ fun GameMapScreen(
                     players.forEach { player ->
                         val dotColor = when {
                             !player.isAlive -> Color.Gray
-                            player.id == "me" -> Color.Green
+                            player.id == uiState.localPlayerId -> Color.Green
                             else -> Color.Blue
                         }
                         

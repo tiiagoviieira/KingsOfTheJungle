@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
@@ -23,6 +24,7 @@ import com.example.kingsofthejungle.ui.screens.LobbyScreen
 import com.example.kingsofthejungle.ui.screens.LoginScreen
 import com.example.kingsofthejungle.ui.theme.KingsOfTheJungleTheme
 import com.example.kingsofthejungle.ui.screens.GameMapScreen
+import com.example.kingsofthejungle.ui.screens.JoinLobbyScreen
 
 class MainActivity : ComponentActivity() {
     private lateinit var nearbyRepository: NearbyConnectionsRepository
@@ -79,9 +81,6 @@ fun RequestGamePermissions() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissionsMap ->
         val allGranted = permissionsMap.values.all { it }
-        if (allGranted) {
-            // All permissions granted
-        }
     }
 
     LaunchedEffect(Unit) {
@@ -95,11 +94,26 @@ fun MainNavigation(viewModelFactory: ViewModelProvider.Factory) {
     val viewModel: GameViewModel = viewModel(factory = viewModelFactory)
     val uiState = viewModel.publicUiState.collectAsState().value
 
+    // Auto-navigate to lobby when a lobby object is received (connection successful)
+    LaunchedEffect(uiState.currentLobby) {
+        if (uiState.currentLobby != null && !uiState.gameState) {
+            // Only navigate if we're not already on the lobby screen.
+            // Previously this fired on every lobby update (player moved, toggled ready, etc.)
+            // causing the screen to re-enter and visually "flash".
+            val currentRoute = navController.currentBackStackEntry?.destination?.route
+            if (currentRoute != "lobby") {
+                navController.navigate("lobby") {
+                    popUpTo("action_selection") { inclusive = false }
+                }
+            }
+        }
+    }
+
     // Auto-navigate to game map when gameState is true (sync across network)
     LaunchedEffect(uiState.gameState) {
         if (uiState.gameState) {
             navController.navigate("game_map") {
-                // Ensure we don't build up a backstack of lobby/map screens
+                // Ensure we don't build up a backstack of lobby screens
                 popUpTo("action_selection") { inclusive = false }
             }
         }
@@ -119,25 +133,46 @@ fun MainNavigation(viewModelFactory: ViewModelProvider.Factory) {
             ActionSelectionScreen(
                 onCreateLobbyClick = {
                     viewModel.createLobby(lobbyName = "${uiState.playerName}'s Jungle", maxPlayers = 4)
-                    navController.navigate("lobby")
                 },
                 onJoinLobbyClick = {
                     viewModel.startDiscoveringLobbies()
-                    navController.navigate("lobby")
+                    navController.navigate("join_lobby")
+                }
+            )
+        }
+
+        composable("join_lobby") {
+            DisposableEffect(Unit) {
+                onDispose { viewModel.stopDiscoveringLobbies() }
+            }
+            JoinLobbyScreen(
+                uiState = uiState,
+                onLobbyClick = { endpointId ->
+                    viewModel.joinDiscoveredLobby(endpointId)
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }
 
         composable("lobby") {
             uiState.currentLobby?.let { lobby ->
-                val isAdmin = lobby.playerList.find { it.id == "me" }?.isAdmin == true
+                val isAdmin = lobby.playerList.find { it.id == uiState.localPlayerId }?.isAdmin == true
+                val isReady = lobby.playerList.find { it.id == uiState.localPlayerId }?.isReady == true
                 LobbyScreen(
                     lobby = lobby,
                     isCurrentUserAdmin = isAdmin,
+                    isCurrentUserReady = isReady,
+                    gameMessage = uiState.gameMessage,
+                    onGameMessageDismissed = { viewModel.clearGameMessage() },
                     onReadyClick = { viewModel.toggleReadyStatus() },
-                    onStartGameClick = {
-                        viewModel.startGame()
-                        // Navigation is now handled by the LaunchedEffect reacting to gameState
+                    onStartGameClick = { viewModel.startGame() },
+                    onLeaveClick = {
+                        viewModel.leaveLobby()
+                        navController.navigate("action_selection") {
+                            popUpTo("action_selection") { inclusive = true }
+                        }
                     }
                 )
             }

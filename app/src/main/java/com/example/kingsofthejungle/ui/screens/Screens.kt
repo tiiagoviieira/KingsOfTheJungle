@@ -1,7 +1,10 @@
 package com.example.kingsofthejungle.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,10 +19,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import com.example.kingsofthejungle.AppUiState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,14 +39,6 @@ fun LoginScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Kings Of The Jungle") },
-                actions = {
-                    IconButton(onClick = { showMenu = !showMenu }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More Options")
-                    }
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(text = { Text("Settings") }, onClick = { })
-                    }
-                }
             )
         }
     ) { paddingValues ->
@@ -85,14 +80,131 @@ fun ActionSelectionScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JoinLobbyScreen(
+    uiState: AppUiState,
+    onLobbyClick: (String) -> Unit,
+    onBackClick: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Available Lobbies") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        when {
+            // Discovery failed — show the reason
+            uiState.discoveryError != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        Text(
+                            text = "Could not start search",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.discoveryError,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Still scanning, nothing found yet
+            uiState.availableLobbies.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Searching for lobbies...")
+                    }
+                }
+            }
+
+            // Lobbies found
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.availableLobbies) { (endpointId, endpointName) ->
+                        Card(
+                            onClick = { onLobbyClick(endpointId) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = endpointName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(text = "Join", color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun LobbyScreen(
     lobby: Lobby,
     isCurrentUserAdmin: Boolean,
+    isCurrentUserReady: Boolean,
+    gameMessage: String? = null,
+    onGameMessageDismissed: () -> Unit = {},
     onReadyClick: () -> Unit,
-    onStartGameClick: () -> Unit
+    onStartGameClick: () -> Unit,
+    onLeaveClick: () -> Unit
 ) {
     val allReady = lobby.playerList.all { it.isReady }
+
+    if (gameMessage != null) {
+        AlertDialog(
+            onDismissRequest = onGameMessageDismissed,
+            title = { Text("Game Over") },
+            text = { Text(gameMessage, style = MaterialTheme.typography.bodyLarge) },
+            confirmButton = {
+                Button(onClick = onGameMessageDismissed) {
+                    Text("Continue")
+                }
+            }
+        )
+    }
+
+
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(text = "Lobby: ${lobby.name}", style = MaterialTheme.typography.headlineMedium)
@@ -109,8 +221,15 @@ fun LobbyScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Button(onClick = onReadyClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Toggle Ready")
+        Button(
+            onClick = onReadyClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = if (isCurrentUserReady)
+                ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+            else
+                ButtonDefaults.buttonColors()
+        ) {
+            Text(if (isCurrentUserReady) "✓ Ready" else "Not Ready — Tap to Ready Up")
         }
 
         if (isCurrentUserAdmin) {
@@ -122,6 +241,11 @@ fun LobbyScreen(
             ) {
                 Text("Start Game")
             }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(onClick = onLeaveClick, modifier = Modifier.fillMaxWidth()) {
+            Text("Leave Lobby")
         }
     }
 }
@@ -254,7 +378,9 @@ fun LobbyScreenPreview() {
             lobby = mockLobby,
             isCurrentUserAdmin = true,
             onReadyClick = {},
-            onStartGameClick = {}
+            onStartGameClick = {},
+            onLeaveClick = {},
+            isCurrentUserReady = false
         )
     }
 }

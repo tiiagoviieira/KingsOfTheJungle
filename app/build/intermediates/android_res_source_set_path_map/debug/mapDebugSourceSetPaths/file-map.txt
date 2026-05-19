@@ -1,0 +1,7 @@
+com.example.kingsofthejungle.app-pngs-0 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/generated/res/pngs/debug
+com.example.kingsofthejungle.app-updated_navigation_xml-1 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/generated/updated_navigation_xml/debug
+com.example.kingsofthejungle.app-packageDebugResources-2 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.example.kingsofthejungle.app-packageDebugResources-3 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.example.kingsofthejungle.app-debug-4 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.example.kingsofthejungle.app-debug-5 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/src/debug/res
+com.example.kingsofthejungle.app-main-6 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/src/main/res
