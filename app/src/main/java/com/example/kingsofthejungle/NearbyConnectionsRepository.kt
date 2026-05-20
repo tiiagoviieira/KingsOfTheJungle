@@ -20,7 +20,7 @@ class NearbyConnectionsRepository(private val context: Context) {
     private val serviceId = "com.example.kingsofthejungle.SERVICE_ID"
     private val gson = Gson()
     private val repositoryScope = CoroutineScope(Dispatchers.IO)
-    
+
     private val _newConnections = MutableSharedFlow<Unit>()
     val newConnections = _newConnections.asSharedFlow()
 

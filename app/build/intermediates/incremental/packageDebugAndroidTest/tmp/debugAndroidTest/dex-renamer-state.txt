@@ -1,0 +1,10 @@
+#Wed May 20 01:02:17 WEST 2026
+base.0=/home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/dex/debugAndroidTest/mergeExtDexDebugAndroidTest/classes.dex
+base.1=/home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/dex/debugAndroidTest/mergeProjectDexDebugAndroidTest/0/classes.dex
+base.2=/home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/dex/debugAndroidTest/mergeProjectDexDebugAndroidTest/15/classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=15/classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex

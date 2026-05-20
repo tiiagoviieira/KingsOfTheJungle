@@ -1,4 +1,4 @@
-#Wed May 20 00:30:48 WEST 2026
+#Wed May 20 01:02:16 WEST 2026
 base.0=/home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/dex/debug/mergeExtDexDebug/classes.dex
 base.1=/home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
 base.2=/home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/dex/debug/mergeProjectDexDebug/13/classes.dex

@@ -1,0 +1,4 @@
+com.example.kingsofthejungle.test.app-updated_navigation_xml-0 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/generated/updated_navigation_xml/debugAndroidTest
+com.example.kingsofthejungle.test.app-packageDebugAndroidTestResources-1 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/incremental/debugAndroidTest/packageDebugAndroidTestResources/merged.dir
+com.example.kingsofthejungle.test.app-packageDebugAndroidTestResources-2 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/incremental/debugAndroidTest/packageDebugAndroidTestResources/stripped.dir
+com.example.kingsofthejungle.test.app-debugAndroidTest-3 /home/tiago/AndroidStudioProjects/KingsOfTheJungle2/app/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources
